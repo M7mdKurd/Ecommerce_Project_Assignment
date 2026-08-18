@@ -12,7 +12,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.IntegerField()
+    category_id = serializers.IntegerField()
 
 
     class Meta:
