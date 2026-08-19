@@ -15,7 +15,14 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product_id', 'quantity', 'product_name', 'price', 'product_description', 'product_image']
+        fields = ['id',
+                  'product_id',
+                  'quantity',
+                  'product_name',
+                  'price',
+                  'product_description',
+                  'product_image'
+                  ]
 
     def validate(self, attrs):
         if attrs['quantity'] > Products.objects.get(id=attrs['product_id']).stock:
@@ -39,7 +46,12 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['id','user_id','created_at','total_amount','items']
+        fields = ['id',
+                  'user_id',
+                  'created_at',
+                  'total_amount',
+                  'items'
+                  ]
 
     def validate(self, attrs):
         try:
