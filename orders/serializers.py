@@ -24,17 +24,20 @@ class OrderItemSerializer(serializers.ModelSerializer):
                   'product_image'
                   ]
 
+    # Validations
+
     def validate(self, attrs):
         if attrs['quantity'] > Products.objects.get(id=attrs['product_id']).stock:
             raise serializers.ValidationError("Out of Stock")
 
-        try:
-            Products.objects.get(id=attrs['product_id'])
-        except Products.DoesNotExist:
-            raise serializers.ValidationError("Invalid Product")
-
-
         return attrs
+
+    def validate_product_id(self, value):
+        try:
+            Products.objects.get(id=value)
+        except Products.DoesNotExist:
+            raise serializers.ValidationError("Product Does Not Exist")
+        return value
 
 
 
@@ -42,9 +45,6 @@ class OrderSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField()
     items = OrderItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField(read_only=True)
-    tax = serializers.DecimalField(max_digits=10, decimal_places=2, default=0.05)
-    shipping_cost = serializers.DecimalField(max_digits=10, decimal_places=2, default=5.00)
-    grand_total = serializers.SerializerMethodField(read_only=True)
     order_status = serializers.ChoiceField(choices=Order.order_status_choices, default='pending')
 
     class Meta:
@@ -55,21 +55,12 @@ class OrderSerializer(serializers.ModelSerializer):
                   'updated_at',
                   'delivery_address',
                   'total_amount',
-                  'tax',
-                  'shipping_cost',
-                  'grand_total',
                   'order_status',
                   'items'
                   ]
 
 
-    def get_total_amount(self, obj):
-        order_items = obj.items.all()
-        return sum(order_items.item_total for order_items in order_items)
-
-    def get_grand_total(self, obj):
-        tax_money = self.get_total_amount(obj) * obj.tax
-        return self.get_total_amount(obj) + tax_money + obj.shipping_cost
+    # Validations
 
     def validate(self, attrs):
         try:
@@ -78,6 +69,16 @@ class OrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid User")
 
         return attrs
+
+
+
+    # Calculations
+
+    def get_total_amount(self, obj):
+        order_items = obj.items.all()
+        return sum(order_items.item_total for order_items in order_items)
+
+
 
 
 

@@ -25,3 +25,10 @@ class Products(models.Model):
     (False, 'inactive')
     )
     status = models.BooleanField(choices=status_choices , default=True)
+
+
+    def decrease_stock(self, quantity):
+        if quantity > self.stock:
+            raise ValueError("Insufficient stock")
+        self.stock -= quantity
+        self.save()

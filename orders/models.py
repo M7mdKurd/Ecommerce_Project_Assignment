@@ -9,16 +9,14 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     delivery_address = models.TextField()
-    tax = models.DecimalField(max_digits=10, decimal_places=2, default=decimal.Decimal('0.05'))
-    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=decimal.Decimal('2.00'))
     order_status_choices = (
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('shipping', 'Shipping'),
         ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
     )
     order_status = models.CharField(max_length=10, choices=order_status_choices, default='pending')
-
 
 
 

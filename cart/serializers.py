@@ -24,17 +24,21 @@ class CartItemSerializer(serializers.ModelSerializer):
                   'product_image'
                   ]
 
+    # Validations
+
     def validate(self, attrs):
         if attrs['quantity'] > Products.objects.get(id=attrs['product_id']).stock:
             raise serializers.ValidationError("Out of Stock")
 
-        try:
-            Products.objects.get(id=attrs['product_id'])
-        except Products.DoesNotExist:
-            raise serializers.ValidationError("Invalid Product")
-
-
         return attrs
+
+
+    def validate_product_id(self, value):
+        try:
+            Products.objects.get(id=value)
+        except Products.DoesNotExist:
+            raise serializers.ValidationError("Product Does Not Exist")
+        return value
 
 
 
@@ -52,6 +56,8 @@ class CartSerializer(serializers.ModelSerializer):
                   'total_amount',
                   'items'
                   ]
+
+    # Validations
 
     def validate(self, attrs):
         try:
