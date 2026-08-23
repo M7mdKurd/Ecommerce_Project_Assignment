@@ -18,4 +18,4 @@ class CartItem(models.Model):
 
     @property
     def item_total(self):
-        return self.quantity * self.product.price
+        return decimal.Decimal(self.quantity) * self.product.price

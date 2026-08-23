@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.authtoken.models import Token
@@ -43,7 +44,7 @@ class AuthViewSet(ViewSet):
 
 
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], authentication_classes=[TokenAuthentication])
     def logout(self, request):
 
         request.user.auth_token.delete()
@@ -51,7 +52,7 @@ class AuthViewSet(ViewSet):
 
 
 
-    @action(detail=False, methods=['get'], url_path='profile', permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'], url_path='profile', permission_classes=[IsAuthenticated], authentication_classes=[TokenAuthentication])
     def profile(self, request):
         return Response(
             {

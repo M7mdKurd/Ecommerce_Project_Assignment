@@ -42,10 +42,10 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField()
+    user_id = serializers.IntegerField(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField(read_only=True)
-    order_status = serializers.ChoiceField(choices=Order.order_status_choices, default='pending')
+    order_status = serializers.ChoiceField(choices=Order.order_status_choices, default='pending', read_only=True)
 
     class Meta:
         model = Order
@@ -58,17 +58,6 @@ class OrderSerializer(serializers.ModelSerializer):
                   'order_status',
                   'items'
                   ]
-
-
-    # Validations
-
-    def validate(self, attrs):
-        try:
-            User.objects.get(id=attrs['user_id'])
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid User")
-
-        return attrs
 
 
 

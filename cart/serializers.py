@@ -43,7 +43,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField()
+    user_id = serializers.IntegerField(read_only=True)
     items = CartItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField()
 
@@ -57,14 +57,6 @@ class CartSerializer(serializers.ModelSerializer):
                   'items'
                   ]
 
-    # Validations
-
-    def validate(self, attrs):
-        try:
-            User.objects.get(id=attrs['user_id'])
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid User")
-        return attrs
 
     def get_total_amount(self,obj):
         cart_items = obj.items.all()

@@ -1,5 +1,7 @@
 from rest_framework import viewsets, mixins, status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from cart.models import Cart, CartItem
@@ -8,11 +10,11 @@ from cart.serializers import CartSerializer, CartItemSerializer
 
 class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = CartSerializer
-    queryset = Cart.objects.all()
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
-    def get_items(self, request, *args, **kwargs):
-        serializer = CartSerializer(many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return Cart.objects.filter(user=self.request.user)
 
     @action(detail=False, methods=['post'], url_path='add')
     def add_item(self, request):
@@ -21,8 +23,9 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
         serializers = CartSerializer(data=request.data)
         serializers.is_valid(raise_exception=True)
-        cart, created = Cart.objects.get_or_create(user_id=serializers.validated_data['user_id'])
-
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        if not request.user.is_active:
+            return Response({'message': 'User is not active'}, status=status.HTTP_400_BAD_REQUEST)
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
@@ -34,7 +37,7 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         return Response(CartItemSerializer(item).data, status=status.HTTP_201_CREATED)
 
 
-    @action(detail=True, methods=['delete'], url_path='delete')
+    @action(detail=True, methods=['delete'], url_path='items')
     def delete_item(self, request, pk=None):
         Cart.objects.filter(id=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -51,6 +54,6 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
     @action(detail=False, methods=['delete'], url_path='clear')
     def clear_cart(self, request):
-        Cart.objects.all().delete()
+        Cart.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
