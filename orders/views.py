@@ -9,10 +9,10 @@ from orders.models import Order, OrderItem
 from orders.serializers import OrderSerializer
 
 
-class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
+class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin):
 
     serializer_class = OrderSerializer
-    permissions_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
     def get_queryset(self):
@@ -24,8 +24,6 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
 
     def create(self, request, *args, **kwargs):
 
-        if request.user.is_anonymous:
-            return Response({'message': 'You are not logged in'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             cart = request.user.cart
         except ObjectDoesNotExist:
@@ -37,8 +35,12 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
             return Response({'message': 'No items in cart'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+        # Instead of getting an Integrity Error, we can check if the user has already placed an order
+        # Even if the user has an active cart, they cannot make another order because he already has an active order
         if  Order.objects.filter(user=request.user).exists():
             return Response({'message': 'You have already placed an order'}, status=status.HTTP_400_BAD_REQUEST)
+        #but what if he cancels it and then makes another order?
+
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -48,25 +50,20 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
             OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity)
             item.product.decrease_stock(item.quantity)
 
-        cart.items.all().delete()
+        cart_items.delete()
 
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def retrieve(self, request, pk=None):
-
-        order = Order.objects.get(id=pk)
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
 
 
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_order(self, request, pk=None):
-        if request.user.is_anonymous:
-            return Response({'message': 'You are not logged in'}, status=status.HTTP_401_UNAUTHORIZED)
 
         order = Order.objects.get(id=pk)
+        if order.user != request.user:
+            return Response({'message': 'You are not authorized to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
 
         if order.order_status in ['shipping', 'delivered']:
             return Response({'message': 'Order cannot be cancelled'}, status=status.HTTP_400_BAD_REQUEST)

@@ -3,29 +3,25 @@ from rest_framework import serializers
 
 from cart.models import CartItem, Cart
 from products.models import Products
+from products.serializers import ProductSerializer
 
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
-    product_name = serializers.CharField(source='product.name', read_only=True)
+    product = ProductSerializer(read_only=True)
     price = serializers.DecimalField(source='item_total', max_digits=10, decimal_places=2, read_only=True)
-    product_description = serializers.CharField(source='product.description', read_only=True)
-    product_image = serializers.ImageField(source='product.image', read_only=True)
 
     class Meta:
         model = CartItem
         fields = ['id',
                   'product_id',
                   'quantity',
-                  'product_name',
                   'price',
-                  'product_description',
-                  'product_image'
+                  'product',
                   ]
 
     # Validations
-
     def validate(self, attrs):
         if attrs['quantity'] > Products.objects.get(id=attrs['product_id']).stock:
             raise serializers.ValidationError("Out of Stock")
@@ -43,7 +39,6 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(read_only=True)
     items = CartItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField()
 
@@ -51,7 +46,6 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ['id',
-                  'user_id',
                   'created_at',
                   'total_amount',
                   'items'

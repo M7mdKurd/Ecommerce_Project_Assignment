@@ -16,23 +16,24 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
 
+    # if the user the user is not active, the authentication will not work by token
+
     @action(detail=False, methods=['post'], url_path='add')
     def add_item(self, request):
         serializer = CartItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        serializers = CartSerializer(data=request.data)
-        serializers.is_valid(raise_exception=True)
+        product_id = serializer.validated_data['product_id']
+        quantity = serializer.validated_data['quantity']
+
         cart, created = Cart.objects.get_or_create(user=request.user)
-        if not request.user.is_active:
-            return Response({'message': 'User is not active'}, status=status.HTTP_400_BAD_REQUEST)
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
-            product_id=serializer.validated_data['product_id'],
-            defaults={'quantity': serializer.validated_data['quantity']}
-        )
+            product_id=product_id,
+            defaults={'quantity': quantity}
 
+        )
 
         return Response(CartItemSerializer(item).data, status=status.HTTP_201_CREATED)
 
@@ -45,12 +46,14 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
     @action(detail=True, methods=['put'], url_path='update')
     def update_quantity(self, request, pk=None):
-        serializers = CartItemSerializer(data=request.data)
-        serializers.is_valid(raise_exception=True)
-        cart_item = CartItem.objects.get(id=pk)
-        cart_item.quantity = request.data.get('quantity',cart_item.quantity)
-        cart_item.save()
-        return Response(CartItemSerializer(cart_item).data)
+        serializer = CartItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = Cart.objects.get(id=pk, user=request.user)
+        item = cart.items.get(product_id=serializer.validated_data['product_id'])
+        item.quantity = serializer.validated_data['quantity']
+        item.save()
+
+        return Response(CartItemSerializer(item).data)
 
     @action(detail=False, methods=['delete'], url_path='clear')
     def clear_cart(self, request):

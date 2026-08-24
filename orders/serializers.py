@@ -3,15 +3,14 @@ from rest_framework import serializers
 
 from orders.models import OrderItem, Order
 from products.models import Products
+from products.serializers import ProductSerializer
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
-    product_name = serializers.CharField(source='product.name', read_only=True)
     price = serializers.DecimalField(source='item_total', max_digits=10, decimal_places=2, read_only=True)
-    product_description = serializers.CharField(source='product.description', read_only=True)
-    product_image = serializers.ImageField(source='product.image', read_only=True)
+    product = ProductSerializer(read_only=True)
 
     class Meta:
         model = OrderItem
@@ -19,9 +18,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
                   'product_id',
                   'quantity',
                   'price',
-                  'product_name',
-                  'product_description',
-                  'product_image'
+                  'product',
                   ]
 
     # Validations
@@ -42,7 +39,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField(read_only=True)
     order_status = serializers.ChoiceField(choices=Order.order_status_choices, default='pending', read_only=True)
