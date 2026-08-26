@@ -10,7 +10,6 @@ from orders.serializers import OrderSerializer
 
 
 class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin):
-
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
@@ -35,11 +34,8 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
             return Response({'message': 'No items in cart'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-        # Instead of getting an Integrity Error, we can check if the user has already placed an order
-        # Even if the user has an active cart, they cannot make another order because he already has an active order
-        if  Order.objects.filter(user=request.user).exists():
+        if Order.objects.filter(user=request.user).exclude(order_status__in=['delivered', 'cancelled']).exists():
             return Response({'message': 'You have already placed an order'}, status=status.HTTP_400_BAD_REQUEST)
-        #but what if he cancels it and then makes another order?
 
 
         serializer = self.get_serializer(data=request.data)
@@ -61,9 +57,7 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_order(self, request, pk=None):
 
-        order = Order.objects.get(id=pk)
-        if order.user != request.user:
-            return Response({'message': 'You are not authorized to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
+        order = self.get_object()
 
         if order.order_status in ['shipping', 'delivered']:
             return Response({'message': 'Order cannot be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
@@ -71,8 +65,7 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
         else:
             order.order_status = 'cancelled'
             order.save()
+
+            for item in order.items.all():
+                item.product.increase_stock(item.quantity)
             return Response({'message': 'Order cancelled successfully'}, status=status.HTTP_200_OK)
-
-
-
-

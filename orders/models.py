@@ -6,7 +6,7 @@ from products.models import Products
 
 
 class Order(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     delivery_address = models.TextField()

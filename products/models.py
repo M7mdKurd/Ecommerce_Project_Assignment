@@ -32,3 +32,8 @@ class Products(models.Model):
             raise ValueError("Insufficient stock")
         self.stock -= quantity
         self.save()
+
+
+    def increase_stock(self, quantity):
+        self.stock += quantity
+        self.save()

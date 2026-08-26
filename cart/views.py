@@ -16,8 +16,6 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
 
-    # if the user the user is not active, the authentication will not work by token
-
     @action(detail=False, methods=['post'], url_path='add')
     def add_item(self, request):
         serializer = CartItemSerializer(data=request.data)
