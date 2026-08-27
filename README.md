@@ -115,8 +115,3 @@ To access protected endpoints, include the token in your HTTP header:
 ```http
 Authorization: Token <your_token_here>
 ```
-
----
-
-## 📜 License
-Distributed under the MIT License. See `LICENSE` for more information.
