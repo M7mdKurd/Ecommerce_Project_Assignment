@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import MultipleObjectsReturned
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -25,7 +26,7 @@ class AuthViewSet(ViewSet):
             if email.check_password(password):
                 token, created = Token.objects.get_or_create(user=email)
                 return Response({'token': token.key})
-            return Response({'message': 'Username / Password is Invalid'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Email / Password is Invalid'}, status=status.HTTP_401_UNAUTHORIZED)
         except User.DoesNotExist:
             return Response({'message': 'Email not found'}, status=status.HTTP_404_NOT_FOUND)
 

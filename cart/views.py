@@ -38,8 +38,12 @@ class CartViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
     @action(detail=True, methods=['delete'], url_path='items')
     def delete_item(self, request, pk=None):
-        Cart.objects.filter(id=pk).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            self.get_object().delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Cart.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
     @action(detail=True, methods=['put'], url_path='update')

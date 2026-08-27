@@ -8,6 +8,11 @@ class RegisterSerializer (serializers.ModelSerializer):
         fields = ['username','email','password']
         extra_kwargs = {'email': {'required': True , 'allow_blank' : False}}
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
 
 
 class LoginSerializer (serializers.Serializer):

@@ -9,7 +9,7 @@ from orders.models import Order, OrderItem
 from orders.serializers import OrderSerializer
 
 
-class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin):
+class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
@@ -58,6 +58,9 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Create
     def cancel_order(self, request, pk=None):
 
         order = self.get_object()
+
+        if order.order_status == 'cancelled':
+            return Response({'message': 'Order already cancelled'}, status=status.HTTP_400_BAD_REQUEST)
 
         if order.order_status in ['shipping', 'delivered']:
             return Response({'message': 'Order cannot be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
